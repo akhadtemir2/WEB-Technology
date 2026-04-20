@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theater DB — Моя База Данных</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #e8c84a;
+    --accent2: #5b8fff;
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+    --green: #4ade80;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,200,74,0.1);
+    border: 1px solid rgba(232,200,74,0.25);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    width: fit-content;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(42px, 7vw, 80px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .hero h1 span { color: var(--accent); }
+
+  .hero-sub {
+    font-size: 17px;
+    color: var(--muted);
+    max-width: 560px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 40px;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* GLOW BG */
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    opacity: 0.12;
+  }
+
+  .glow-1 {
+    width: 500px; height: 500px;
+    background: var(--accent);
+    top: -100px; right: -100px;
+  }
+
+  .glow-2 {
+    width: 400px; height: 400px;
+    background: var(--accent2);
+    bottom: 0; left: -50px;
+  }
+
+  /* SECTIONS */
+  section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 40px;
+    line-height: 1.1;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: rgba(232,200,74,0.3);
+    transform: translateY(-2px);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .card-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    margin: 16px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 12px; right: 16px;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Manrope', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .kw { color: #c084fc; }
+  .fn { color: var(--accent2); }
+  .str { color: #86efac; }
+  .cm { color: #4a4a6a; font-style: italic; }
+  .num { color: var(--accent); }
+
+  /* TABLES GRID */
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .table-card:hover {
+    border-color: rgba(91,143,255,0.4);
+    transform: translateY(-3px);
+  }
+
+  .table-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--accent2);
+  }
+
+  .table-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .table-fields {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .field-tag {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Courier New', monospace;
+  }
+
+  /* CONCEPT CARDS */
+  .concepts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 600px) {
+    .concepts { grid-template-columns: 1fr; }
+    .hero-stats { flex-wrap: wrap; gap: 24px; }
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    section { padding: 60px 20px; }
+  }
+
+  .concept-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .concept-card:hover { border-color: rgba(232,200,74,0.25); }
+
+  .concept-term {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: -0.5px;
+  }
+
+  .concept-def {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* SCHEMA DIAGRAM */
+  .schema-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+
+  .schema-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 500px;
+  }
+
+  .schema-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .schema-node {
+    background: #1a1a28;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .schema-node.center {
+    background: rgba(232,200,74,0.1);
+    border-color: rgba(232,200,74,0.4);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .schema-node.blue {
+    background: rgba(91,143,255,0.08);
+    border-color: rgba(91,143,255,0.3);
+    color: var(--accent2);
+  }
+
+  .arrow {
+    color: var(--muted);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0 40px;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .badge-green { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.25); }
+  .badge-yellow { background: rgba(232,200,74,0.12); color: var(--accent); border: 1px solid rgba(232,200,74,0.25); }
+  .badge-red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* DATA SAMPLES */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 10px 14px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">🎬 Theater DB</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Обзор</a></li>
+    <li><a href="#tables">Таблицы</a></li>
+    <li><a href="#concepts">Концепции</a></li>
+    <li><a href="#data">Данные</a></li>
+    <li><a href="#schema">Схема</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div style="position:relative; overflow:hidden;">
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="hero">
+    <div class="hero-tag">📋 Database Assignment</div>
+    <h1>База данных<br><span>кинотеатра</span></h1>
+    <p class="hero-sub">
+      Спроектировал и реализовал полноценную БД для управления кинотеатрами — фильмы, сеансы, бронирования, сотрудники и цены. Всё в одной схеме.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">11</span>
+        <span class="stat-label">Таблиц</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Кинотеатра</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Фильма</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">1</span>
+        <span class="stat-label">Схема</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-label">Что сделал</div>
+  <div class="section-title">Общий обзор проекта</div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(232,200,74,0.1);">🗂️</div>
+      <div>
+        <div class="card-title">Схема theater</div>
+        <div class="card-sub">PostgreSQL / DDL + DML</div>
+      </div>
+    </div>
+    <p>
+      Создал отдельную схему <code style="color:var(--accent)">theater</code> — это как папка внутри базы данных, чтобы всё было аккуратно и не смешивалось с другими таблицами. Внутри неё всё: жанры, фильмы, залы, клиенты, сотрудники, сеансы и бронирования.
+    </p>
+    <div class="code-block" data-lang="SQL">
+<span class="kw">CREATE SCHEMA IF NOT EXISTS</span> theater;<br>
+<span class="kw">SET</span> search_path <span class="kw">TO</span> theater;<br>
+<span class="cm">-- теперь не надо каждый раз писать theater.Films, просто Films</span>
+    </div>
+  </div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(91,143,255,0.1);">🔗</div>
+      <div>
+        <div class="card-title">Связи между таблицами</div>
+        <div class="card-sub">Foreign Keys везде где нужно</div>
+      </div>
+    </div>
+    <p>
+      Таблицы не изолированы — они связаны через внешние ключи. Например нельзя добавить фильм с жанром которого не существует. База сама проверит и выдаст ошибку. Это защита от мусорных данных.
+    </p>
+  </div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(74,222,128,0.1);">⚙️</div>
+      <div>
+        <div class="card-title">ALTER TABLE после создания</div>
+        <div class="card-sub">Изменял структуру не пересоздавая таблицы</div>
+      </div>
+    </div>
+    <p>
+      После создания таблиц добавил новые ограничения, удалил ненужные колонки и добавил новые — всё через <code style="color:var(--accent)">ALTER TABLE</code>, без удаления таблиц с данными.
+    </p>
+    <div class="code-block" data-lang="SQL">
+<span class="kw">ALTER TABLE</span> theater.Customers <span class="kw">DROP COLUMN</span> notes;<br>
+<span class="kw">ALTER TABLE</span> theater.Customers <span class="kw">ADD COLUMN</span> email <span class="fn">VARCHAR</span>(<span class="num">100</span>);<br>
+<span class="kw">ALTER TABLE</span> theater.Customers <span class="kw">ADD CONSTRAINT</span> uq_customer_email <span class="kw">UNIQUE</span>(email);
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TABLES -->
+<section id="tables">
+  <div class="section-label">Структура</div>
+  <div class="section-title">Все 11 таблиц</div>
+
+  <div class="tables-grid">
+
+    <div class="table-card fade-in">
+      <div class="table-name">Genres</div>
+      <div class="table-desc">Жанры фильмов. Простая справочная таблица.</div>
+      <div class="table-fields">
+        <span class="field-tag">genre_id 🔑</span>
+        <span class="field-tag">name</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Theaters</div>
+      <div class="table-desc">Кинотеатры. Название, адрес, рейтинг.</div>
+      <div class="table-fields">
+        <span class="field-tag">theater_id 🔑</span>
+        <span class="field-tag">name</span>
+        <span class="field-tag">address</span>
+        <span class="field-tag">rating</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Films</div>
+      <div class="table-desc">Фильмы с возрастным ограничением, длительностью и жанром.</div>
+      <div class="table-fields">
+        <span class="field-tag">film_id 🔑</span>
+        <span class="field-tag">name</span>
+        <span class="field-tag">duration</span>
+        <span class="field-tag">genre_id 🔗</span>
+        <span class="field-tag">age_restriction</span>
+        <span class="field-tag">rating</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Customers</div>
+      <div class="table-desc">Клиенты. Email уникальный — два одинаковых не добавить.</div>
+      <div class="table-fields">
+        <span class="field-tag">customer_id 🔑</span>
+        <span class="field-tag">name</span>
+        <span class="field-tag">age</span>
+        <span class="field-tag">phone_number</span>
+        <span class="field-tag">credit_card</span>
+        <span class="field-tag">email</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Seats</div>
+      <div class="table-desc">Места в зале: Normal, Comfort, VIP.</div>
+      <div class="table-fields">
+        <span class="field-tag">seat_id 🔑</span>
+        <span class="field-tag">hall_row</span>
+        <span class="field-tag">number</span>
+        <span class="field-tag">type_of_seat</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Staff</div>
+      <div class="table-desc">Сотрудники. Годовая зарплата считается автоматически.</div>
+      <div class="table-fields">
+        <span class="field-tag">staff_id 🔑</span>
+        <span class="field-tag">name</span>
+        <span class="field-tag">salary</span>
+        <span class="field-tag">annual_salary ⚡</span>
+        <span class="field-tag">theater_id 🔗</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Showtime</div>
+      <div class="table-desc">Сеансы — какой фильм, где, когда.</div>
+      <div class="table-fields">
+        <span class="field-tag">showtime_id 🔑</span>
+        <span class="field-tag">film_id 🔗</span>
+        <span class="field-tag">theater_id 🔗</span>
+        <span class="field-tag">date</span>
+        <span class="field-tag">status</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Pricing</div>
+      <div class="table-desc">Цены на места. У каждого кинотеатра свои.</div>
+      <div class="table-fields">
+        <span class="field-tag">pricing_id 🔑</span>
+        <span class="field-tag">type_of_seat</span>
+        <span class="field-tag">adult_price</span>
+        <span class="field-tag">child_price</span>
+        <span class="field-tag">theater_id 🔗</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Operations</div>
+      <div class="table-desc">Типы операций: Purchased, Refund, Failure.</div>
+      <div class="table-fields">
+        <span class="field-tag">operation_id 🔑</span>
+        <span class="field-tag">operation_type</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Reservations</div>
+      <div class="table-desc">Бронирования — клиент + сеанс + статус.</div>
+      <div class="table-fields">
+        <span class="field-tag">reservation_id 🔑</span>
+        <span class="field-tag">customer_id 🔗</span>
+        <span class="field-tag">showtime_id 🔗</span>
+        <span class="field-tag">status</span>
+        <span class="field-tag">operation_id 🔗</span>
+      </div>
+    </div>
+
+    <div class="table-card fade-in">
+      <div class="table-name">Reservation_Seats</div>
+      <div class="table-desc">Промежуточная таблица — одна бронь, несколько мест.</div>
+      <div class="table-fields">
+        <span class="field-tag">reservation_id 🔗</span>
+        <span class="field-tag">seat_id 🔗</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CONCEPTS -->
+<section id="concepts">
+  <div class="section-label">Ключевые концепции</div>
+  <div class="section-title">Что использовал и зачем</div>
+
+  <div class="concepts">
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">PRIMARY KEY</div>
+      <div class="concept-def">Уникальный ID каждой строки. Не может повторяться и не может быть пустым. В каждой таблице он один.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">FOREIGN KEY</div>
+      <div class="concept-def">Ссылка на другую таблицу. Нельзя добавить данные со значением которого нет в родительской таблице — база выдаст ошибку.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">SERIAL</div>
+      <div class="concept-def">Автоматически увеличивает ID: 1, 2, 3... Не нужно вводить вручную — база сама считает.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">NOT NULL</div>
+      <div class="concept-def">Поле обязательно к заполнению. Если не указать — база не пропустит запись.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">CHECK</div>
+      <div class="concept-def">Проверяет значение перед вставкой. Например <code>CHECK (age &gt;= 18)</code> — только совершеннолетние сотрудники.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">DEFAULT</div>
+      <div class="concept-def">Значение по умолчанию. Например статус сеанса автоматически ставится <code>'Scheduled'</code> если не указать.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">UNIQUE</div>
+      <div class="concept-def">Запрещает дублировать значения в колонке. Например два клиента не могут иметь одинаковый email.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">GENERATED ALWAYS AS</div>
+      <div class="concept-def">Вычисляемое поле — годовая зарплата считается сама: <code>salary * 12</code>. Вручную изменить нельзя.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">TRUNCATE CASCADE</div>
+      <div class="concept-def">Очищает таблицы вместе со всеми связанными данными в дочерних таблицах. Быстрее чем DELETE.</div>
+    </div>
+
+    <div class="concept-card fade-in">
+      <div class="concept-term">Подзапрос в INSERT</div>
+      <div class="concept-def">Вместо того чтобы угадывать ID, находим его по имени: <code>SELECT film_id FROM Films WHERE name = '...'</code></div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- DATA -->
+<section id="data">
+  <div class="section-label">Тестовые данные</div>
+  <div class="section-title">Что вставил в базу</div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(91,143,255,0.1);">🎞️</div>
+      <div>
+        <div class="card-title">Фильмы</div>
+        <div class="card-sub">3 фильма, разные жанры</div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>Жанр</th>
+          <th>Длительность</th>
+          <th>Рейтинг</th>
+          <th>Возраст</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Dune Part Three</td>
+          <td>Action</td>
+          <td>02:35:00</td>
+          <td><span class="badge badge-green">9.1</span></td>
+          <td>12+</td>
+        </tr>
+        <tr>
+          <td>The Father</td>
+          <td>Drama</td>
+          <td>01:37:00</td>
+          <td><span class="badge badge-green">8.3</span></td>
+          <td>12+</td>
+        </tr>
+        <tr>
+          <td>Family Camp</td>
+          <td>Comedy</td>
+          <td>01:45:00</td>
+          <td><span class="badge badge-yellow">7.5</span></td>
+          <td>6+</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(74,222,128,0.1);">🏢</div>
+      <div>
+        <div class="card-title">Кинотеатры и Сеансы</div>
+        <div class="card-sub">3 кинотеатра — 3 сеанса</div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Кинотеатр</th>
+          <th>Фильм</th>
+          <th>Дата</th>
+          <th>Время</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CinemaPlus</td>
+          <td>Dune Part Three</td>
+          <td>2026-05-01</td>
+          <td>14:00</td>
+          <td><span class="badge badge-green">Scheduled</span></td>
+        </tr>
+        <tr>
+          <td>MegaFilm</td>
+          <td>The Father</td>
+          <td>2026-05-02</td>
+          <td>18:30</td>
+          <td><span class="badge badge-green">Scheduled</span></td>
+        </tr>
+        <tr>
+          <td>StarScreen</td>
+          <td>Family Camp</td>
+          <td>2026-05-03</td>
+          <td>20:00</td>
+          <td><span class="badge badge-red">Cancelled</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card fade-in">
+    <div class="card-head">
+      <div class="card-icon" style="background:rgba(232,200,74,0.1);">👤</div>
+      <div>
+        <div class="card-title">Клиенты и бронирования</div>
+        <div class="card-sub">3 клиента — 3 бронирования</div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Клиент</th>
+          <th>Возраст</th>
+          <th>Статус брони</th>
+          <th>Место</th>
+          <th>Карта</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Marat Akhmetov</td>
+          <td>25</td>
+          <td><span class="badge badge-green">Confirmed</span></td>
+          <td>Ряд 1, место 1 (Normal)</td>
+          <td>✅ есть</td>
+        </tr>
+        <tr>
+          <td>Asel Nurbekova</td>
+          <td>31</td>
+          <td><span class="badge badge-yellow">Pending</span></td>
+          <td>Ряд 5, место 1 (Comfort)</td>
+          <td>✅ есть</td>
+        </tr>
+        <tr>
+          <td>Ivan Petrov</td>
+          <td>19</td>
+          <td><span class="badge badge-red">Cancelled</span></td>
+          <td>Ряд 10, место 1 (VIP)</td>
+          <td>❌ нет</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- SCHEMA -->
+<section id="schema">
+  <div class="section-label">Архитектура</div>
+  <div class="section-title">Схема связей таблиц</div>
+
+  <div class="schema-wrap fade-in">
+    <div class="schema-diagram">
+
+      <div class="schema-row">
+        <div class="schema-node blue">Genres</div>
+        <div class="arrow">→</div>
+        <div class="schema-node center">Films</div>
+        <div class="arrow">→</div>
+        <div class="schema-node center">Showtime</div>
+        <div class="arrow">→</div>
+        <div class="schema-node center">Reservations</div>
+        <div class="arrow">→</div>
+        <div class="schema-node blue">Reservation_Seats</div>
+      </div>
+
+      <div class="schema-row" style="padding-left: 220px; gap: 40px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Theaters</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Customers</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Seats</div>
+        </div>
+      </div>
+
+      <div class="schema-row" style="padding-left: 220px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Staff</div>
+        </div>
+        <div style="margin-left: 100px; display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Operations</div>
+        </div>
+      </div>
+
+      <div class="schema-row" style="padding-left: 220px; margin-top: 4px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div class="arrow" style="transform:rotate(90deg)">→</div>
+          <div class="schema-node blue">Pricing</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); display:flex; gap: 24px; flex-wrap: wrap;">
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+        <div style="width:12px;height:12px;border-radius:3px;background:rgba(232,200,74,0.1);border:1px solid rgba(232,200,74,0.4);"></div>
+        Основные таблицы
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+        <div style="width:12px;height:12px;border-radius:3px;background:rgba(91,143,255,0.08);border:1px solid rgba(91,143,255,0.3);"></div>
+        Справочные / связанные
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+        → Направление Foreign Key
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<footer>
+  <p style="font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:6px;">Theater Database</p>
+  <p>PostgreSQL · 11 таблиц · 1 схема · DDL + DML</p>
+</footer>
+
+<script>
+  // Intersection observer for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
