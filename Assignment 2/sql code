@@ -1,0 +1,161 @@
+CREATE SCHEMA IF NOT EXISTS theater;
+SET search_path TO theater;
+
+CREATE TABLE IF NOT EXISTS theater.Genres (
+    genre_id SERIAL PRIMARY KEY,
+    name VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS theater.Theaters (
+    theater_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    address VARCHAR(100) NOT NULL,
+    rating DECIMAL(3,1) CHECK (rating >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Operations (
+    operation_id SERIAL PRIMARY KEY,
+    operation_type VARCHAR(10) NOT NULL CHECK (operation_type IN ('Purchased', 'Refund', 'Failure'))
+);
+
+CREATE TABLE IF NOT EXISTS theater.Customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    age INT NOT NULL CHECK (age >= 0),
+    phone_number VARCHAR(15) NOT NULL,
+    credit_card VARCHAR(16),
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS theater.Seats (
+    seat_id SERIAL PRIMARY KEY,
+    hall_row INT NOT NULL CHECK (hall_row > 0),
+    number INT NOT NULL CHECK (number > 0),
+    type_of_seat VARCHAR(22) NOT NULL CHECK (type_of_seat IN ('Normal', 'Comfort', 'VIP'))
+);
+
+CREATE TABLE IF NOT EXISTS theater.Films (
+    film_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    duration TIME NOT NULL,
+    genre_id INT NOT NULL,
+    release_date DATE NOT NULL CHECK (release_date > '2026-01-01'), 
+    age_restriction VARCHAR(3) NOT NULL CHECK (age_restriction IN ('0+', '6+', '12+', '16+', '18+')),
+    rating DECIMAL(3,1) DEFAULT 0.0 CHECK (rating >= 0),
+    description TEXT NOT NULL,
+    FOREIGN KEY (genre_id) REFERENCES theater.Genres(genre_id)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Staff (
+    staff_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    phone VARCHAR(12) NOT NULL,
+    age INT NOT NULL CHECK (age >= 18),
+    job VARCHAR(20) NOT NULL,
+    salary INT NOT NULL CHECK (salary >= 0),
+    annual_salary INT GENERATED ALWAYS AS (salary * 12) STORED, 
+    theater_id INT NOT NULL,
+    FOREIGN KEY (theater_id) REFERENCES theater.Theaters(theater_id)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Showtime (
+    showtime_id SERIAL PRIMARY KEY,
+    film_id INT NOT NULL,
+    theater_id INT NOT NULL,
+    hall_number INT NOT NULL,
+    date DATE NOT NULL CHECK (date > '2026-01-01'),
+    start_time TIME NOT NULL,
+    status VARCHAR(20) DEFAULT 'Scheduled',
+    FOREIGN KEY (film_id) REFERENCES theater.Films(film_id),
+    FOREIGN KEY (theater_id) REFERENCES theater.Theaters(theater_id)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Pricing (
+    pricing_id SERIAL PRIMARY KEY,
+    type_of_seat VARCHAR(22) NOT NULL,
+    adult_price DECIMAL(6,2) NOT NULL CHECK (adult_price >= 0),
+    child_price DECIMAL(6,2) NOT NULL CHECK (child_price >= 0),
+    theater_id INT NOT NULL,
+    FOREIGN KEY (theater_id) REFERENCES theater.Theaters(theater_id)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Reservations (
+    reservation_id SERIAL PRIMARY KEY,
+    customer_id INT NOT NULL,
+    showtime_id INT NOT NULL,
+    time TIME NOT NULL,
+    status VARCHAR(10) NOT NULL CHECK (status IN ('Pending', 'Confirmed', 'Cancelled')),
+    operation_id INT,
+    FOREIGN KEY (customer_id) REFERENCES theater.Customers(customer_id),
+    FOREIGN KEY (showtime_id) REFERENCES theater.Showtime(showtime_id),
+    FOREIGN KEY (operation_id) REFERENCES theater.Operations(operation_id)
+);
+
+CREATE TABLE IF NOT EXISTS theater.Reservation_Seats (
+    reservation_id INT NOT NULL,
+    seat_id INT NOT NULL,
+    PRIMARY KEY (reservation_id, seat_id),
+    FOREIGN KEY (reservation_id) REFERENCES theater.Reservations(reservation_id),
+    FOREIGN KEY (seat_id) REFERENCES theater.Seats(seat_id)
+);
+
+ALTER TABLE theater.Genres ADD CONSTRAINT uq_genre_name UNIQUE (name);
+ALTER TABLE theater.Staff ALTER COLUMN phone TYPE VARCHAR(20);
+ALTER TABLE theater.Customers DROP COLUMN notes;
+ALTER TABLE theater.Customers ADD COLUMN email VARCHAR(100);
+ALTER TABLE theater.Customers ADD CONSTRAINT uq_customer_email UNIQUE (email);
+
+TRUNCATE TABLE theater.Genres, theater.Theaters, theater.Operations, theater.Customers, 
+theater.Seats, theater.Films, theater.Staff, theater.Showtime, theater.Pricing, 
+theater.Reservations, theater.Reservation_Seats CASCADE;
+
+INSERT INTO theater.Genres (name) VALUES
+('Action'), ('Drama'), ('Comedy');
+
+INSERT INTO theater.Theaters (name, address, rating) VALUES
+('CinemaPlus', 'Atyrau, Lenin Street 10', 8.5),
+('MegaFilm', 'Atyrau, Azattyk Avenue 22', 7.9),
+('StarScreen', 'Atyrau, Satpaev Street 5', NULL);
+
+INSERT INTO theater.Operations (operation_type) VALUES
+('Purchased'), ('Refund'), ('Failure');
+
+INSERT INTO theater.Customers (name, age, phone_number, credit_card, email) VALUES
+('Marat Akhmetov', 25, '+77051112233', '4532123456789012', 'marat@gmail.com'),
+('Asel Nurbekova', 31, '+77072223344', '5425233430109903', 'asel.n@mail.ru'),
+('Ivan Petrov', 19, '+77013334455', NULL, 'ivan99@yandex.ru');
+
+INSERT INTO theater.Seats (hall_row, number, type_of_seat) VALUES
+(1, 1, 'Normal'), (1, 2, 'Normal'),
+(5, 1, 'Comfort'), (5, 2, 'Comfort'),
+(10, 1, 'VIP'), (10, 2, 'VIP');
+
+INSERT INTO theater.Films (name, duration, genre_id, release_date, age_restriction, rating, description) VALUES
+('Dune Part Three', '02:35:00', (SELECT genre_id FROM theater.Genres WHERE name = 'Action'), '2026-03-01', '12+', 9.1, 'Epic sci-fi continuation'),
+('The Father', '01:37:00', (SELECT genre_id FROM theater.Genres WHERE name = 'Drama'), '2026-02-14', '12+', 8.3, 'A man struggles with memory loss'),
+('Family Camp', '01:45:00', (SELECT genre_id FROM theater.Genres WHERE name = 'Comedy'), '2026-04-10', '6+', 7.5, 'A comedy about two rival families');
+
+INSERT INTO theater.Staff (name, phone, age, job, salary, theater_id) VALUES
+('Aibek Seitkali', '+77051234567', 28, 'Cashier', 180000, 1),
+('Dana Nurova', '+77072345678', 34, 'Manager', 320000, 2),
+('Ruslan Bekov', '+77013456789', 22, 'Security', 150000, 3);
+
+INSERT INTO theater.Pricing (type_of_seat, adult_price, child_price, theater_id) VALUES
+('Normal', 1500.00, 800.00, 1),
+('Comfort', 2500.00, 1500.00, 2),
+('VIP', 4000.00, 2500.00, 3);
+
+INSERT INTO theater.Showtime (film_id, theater_id, hall_number, date, start_time, status) VALUES
+((SELECT film_id FROM theater.Films WHERE name = 'Dune Part Three'), 1, 1, '2026-05-01', '14:00:00', 'Scheduled'),
+((SELECT film_id FROM theater.Films WHERE name = 'The Father'), 2, 2, '2026-05-02', '18:30:00', 'Scheduled'),
+((SELECT film_id FROM theater.Films WHERE name = 'Family Camp'), 3, 1, '2026-05-03', '20:00:00', 'Cancelled');
+
+INSERT INTO theater.Reservations (customer_id, showtime_id, time, status, operation_id) VALUES
+(1, 1, '13:30:00', 'Confirmed', 1),
+(2, 2, '17:45:00', 'Pending', 1),
+(3, 3, '19:00:00', 'Cancelled', 2);
+
+INSERT INTO theater.Reservation_Seats (reservation_id, seat_id) VALUES
+(1, 1),
+(2, 3),
+(3, 5);
